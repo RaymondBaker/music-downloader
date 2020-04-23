@@ -1,0 +1,118 @@
+(ns music-downloader.core
+  (:gen-class)
+  (:require [clojure.string :as str])
+  (:require [clojure.pprint :as pp])
+  (:require [clj-http.client :as client])
+  (:require [clj-http.util :as clj-util])
+  (:require [clojure.tools.cli :refer [parse-opts]])
+  (:use [clojure.java.shell :only [sh]]))
+
+(def youtube_url "https://www.youtube.com/")
+(def youtube_search_string (str youtube_url "results?search_query="))
+
+(def default_download_loc "/home/raymond/Downloads/Music/")
+
+(def Verbose false)
+
+(def loc_regex 
+  #"Destination:\s(.*?\.m4a)")
+
+(defn get-song-loc
+  "Get song location from youtube-dl output"
+  [output]
+  (def matcher (re-matcher loc_regex output))
+  (when-let [match (re-find matcher)]
+    (nth match 1)))
+
+(def vid_regex 
+  #"<h3 class=\"yt-lockup-title \"><a href=\"(.*?)\"")
+
+(defn get-vid-links
+  "Get result links from youtube search"
+  ;; TODO: check what vidoe title best matches the song title
+  [html]
+  (def matcher (re-matcher vid_regex html))
+  (loop [match (re-find matcher)
+                  result []]
+    (if-not match
+      result
+      (recur (re-find matcher)
+             (conj result (str youtube_url (nth match 1)))))))
+
+(defn println-err [msg]
+  (binding [*out* *err*]
+    (println msg)))
+
+(defn parse-song [line]
+  "Get song information from .list file line
+  returns hash"
+  (when (re-matches #"\s*[\w\s]+\s+-\s+.*" line)
+      (let [split (str/split line #"\s+-\s+")
+            artist (first split)
+            title (first (rest split))]
+        [artist title])))
+
+(defn read-music [file_path]
+  (with-open [rdr (clojure.java.io/reader file_path)]
+    (for [line (doall (line-seq rdr))
+          :let [[artist title] (parse-song line)]
+          :when (some? artist)]
+      (hash-map :artist artist :title title))))
+
+;; TODO: add option to delete untrimmed file
+;; option to disable silence trimming
+(def cli-options
+  ;; An option with a required argument
+  [["-l" "--list-file FILE" "List file location"
+    :default "music.list"]
+   ["-d" "--download-dir DIR" "download"
+    :default default_download_loc]])
+
+(defn -main [& args]
+  (def cli_opts (parse-opts args cli-options))
+
+  (def list_file (-> cli_opts :options :list-file))
+  (def download_dir (-> cli_opts :options :download-dir))
+
+  (def songs (read-music list_file))
+  (println "Songs to download")
+  (pp/pprint songs)
+  (println "")
+
+  ;; get songs
+  (doseq [song songs]
+    (def artist (:artist song))
+    (def title (:title song))
+    (def search_name (str artist " - " title))
+
+    ;; get search query for youtube
+    (def search_string (str youtube_search_string (clj-util/url-encode search_name)))
+    (println search_string)
+    (def results
+      (get-vid-links 
+        (:body (client/get search_string))))
+    (println results)
+
+    (println "")
+    (println "Downloading Song")
+    (def ytd_res (sh "youtube-dl" "-x" "--embed-thumbnail" "--format" "mp4" "--no-playlist" 
+                           "--output" (str search_name "_untrimmed" ".%(ext)s") (first results)
+        :dir download_dir))
+    (println "youtube-dl Std-Out")
+    (println (:out ytd_res))
+    (println-err "youtube-dl Std-Err:")
+    (println-err (:err ytd_res))
+    (println "")
+
+    ;; Trim silence
+    (def file_path (get-song-loc (:out ytd_res)))
+    (def new_file_path (str/replace file_path #"_untrimmed" ""))
+    (println "Trimming Silence")
+    (def fmpeg_res (sh "ffmpeg" "-i" file_path "-c:a" "alac" "-c:v" "copy" "-af" "silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse,silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse" new_file_path
+                      :dir download_dir))
+    (println "ffmpeg Std-Out")
+    (println (:out fmpeg_res))
+    (println-err "ffmpeg Std-Err:")
+    (println-err (:err fmpeg_res))
+    (println ""))
+  (shutdown-agents))
