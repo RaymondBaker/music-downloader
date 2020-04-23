@@ -16,9 +16,9 @@ Download from http://example.com/FIXME.
 ## Options
 
 -l --list-file <FILE>
-    Where to find list of songs to download
+    > Where to find list of songs to download
 -d --download-dir <DIR>
-    Where to download music to
+    > Where to download music to
 
 ## Examples
 
