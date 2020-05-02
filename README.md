@@ -17,7 +17,7 @@ Download from http://example.com/FIXME.
 -l --list-file <FILE>  
     Where to find list of songs to download  
 -d --download-dir <DIR>  
-    Where to download music to  
+    Where to download music to    
 -s --single-song <SONG>  
     Download single song without list file
 
@@ -25,7 +25,7 @@ Download from http://example.com/FIXME.
 
 ### List File Format
 
-<Artist Name> - <Song Name>  
+`<Artist Name> - <Song Name>`  
 The Beatles - While My Guitar Gently Weeps
 
 ### Bugs
