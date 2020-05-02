@@ -1,7 +1,7 @@
 # music-downloader
 
-Downloads music from a given list file.  
-this first does a search query for the song on youtube and then uses youtube-dl  
+Downloads music from a given list file.
+this first does a search query for the song on youtube and then uses youtube-dl
 and ffmpeg to download and trim the silence respectively
 
 ## Installation
@@ -14,19 +14,19 @@ Download from http://example.com/FIXME.
 
 ## Options
 
-`-l --list-file <FILE>  
-    Where to find list of songs to download  
--d --download-dir <DIR>  
+-l --list-file <FILE>
+    Where to find list of songs to download
+-d --download-dir <DIR>
     Where to download music to
--s --single-song <SONG>  
-    Download single song without list file`
+-s --single-song <SONG>
+    Download single song without list file
 
 ## Examples
 
 ### List File Format
 
-`<Artist Name> - <Song Name>  
-The Beatles - While My Guitar Gently Weeps`
+<Artist Name> - <Song Name>
+The Beatles - While My Guitar Gently Weeps
 
 ### Bugs
 
