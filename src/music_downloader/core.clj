@@ -9,12 +9,12 @@
 
 (def youtube_url "https://www.youtube.com/")
 (def youtube_search_string (str youtube_url "results?search_query="))
-
 (def default_download_loc "/home/raymond/Downloads/Music/")
 
+;; Global Options
 (def Verbose false)
 
-(def loc_regex 
+(def loc_regex
   #"Destination:\s(.*?\.m4a)")
 
 (defn get-song-loc
@@ -24,7 +24,7 @@
   (when-let [match (re-find matcher)]
     (nth match 1)))
 
-(def vid_regex 
+(def vid_regex
   #"<h3 class=\"yt-lockup-title \"><a href=\"(.*?)\"")
 
 (defn get-vid-links
@@ -50,31 +50,40 @@
       (let [split (str/split line #"\s+-\s+")
             artist (first split)
             title (first (rest split))]
-        [artist title])))
+        [(trim artist) (trim title)])))
+
+(defn parse-song->hash-map [parse]
+  (let [artist (get parse 0)
+        title (get parse 1)]
+    (hash-map :artist artist :title title)))
 
 (defn read-music [file_path]
   (with-open [rdr (clojure.java.io/reader file_path)]
     (for [line (doall (line-seq rdr))
-          :let [[artist title] (parse-song line)]
-          :when (some? artist)]
-      (hash-map :artist artist :title title))))
+          :let [parse (parse-song line)]
+          :when (some? parse)]
+      (parse-song->hash-map parse))))
 
 ;; TODO: add option to delete untrimmed file
 ;; option to disable silence trimming
-(def cli-options
+(def cli_options
   ;; An option with a required argument
   [["-l" "--list-file FILE" "List file location"
     :default "music.list"]
-   ["-d" "--download-dir DIR" "download"
-    :default default_download_loc]])
+   ["-d" "--download-dir DIR" "Where to download music to"
+    :default default_download_loc]
+   ["-s" "--single-song SONG" "Name of a single song you want to download"]])
 
 (defn -main [& args]
-  (def cli_opts (parse-opts args cli-options))
+  (def cli_opts (parse-opts args cli_options))
 
   (def list_file (-> cli_opts :options :list-file))
   (def download_dir (-> cli_opts :options :download-dir))
+  (def single_song (-> cli_opts :options :single-song))
 
-  (def songs (read-music list_file))
+  (def songs (if (some? single_song)
+               [(parse-song->hash-map (parse-song single_song))]
+               (read-music list_file)))
   (println "Songs to download")
   (pp/pprint songs)
   (println "")
@@ -89,13 +98,13 @@
     (def search_string (str youtube_search_string (clj-util/url-encode search_name)))
     (println search_string)
     (def results
-      (get-vid-links 
+      (get-vid-links
         (:body (client/get search_string))))
     (println results)
 
     (println "")
     (println "Downloading Song")
-    (def ytd_res (sh "youtube-dl" "-x" "--embed-thumbnail" "--format" "mp4" "--no-playlist" 
+    (def ytd_res (sh "youtube-dl" "-x" "--embed-thumbnail" "--format" "mp4" "--no-playlist"
                            "--output" (str search_name "_untrimmed" ".%(ext)s") (first results)
         :dir download_dir))
     (println "youtube-dl Std-Out")
