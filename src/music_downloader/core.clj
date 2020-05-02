@@ -5,7 +5,8 @@
   (:require [clj-http.client :as client])
   (:require [clj-http.util :as clj-util])
   (:require [clojure.tools.cli :refer [parse-opts]])
-  (:use [clojure.java.shell :only [sh]]))
+  (:use [clojure.java.shell :only [sh]])
+  (:use [clojure.string :only [trim]]))
 
 (def youtube_url "https://www.youtube.com/")
 (def youtube_search_string (str youtube_url "results?search_query="))
@@ -104,7 +105,7 @@
 
     (println "")
     (println "Downloading Song")
-    (def ytd_res (sh "youtube-dl" "-x" "--embed-thumbnail" "--format" "mp4" "--no-playlist"
+    (def ytd_res (sh "youtube-dl" "-x" "--embed-thumbnail" "--audio-format" "m4a" "--no-playlist"
                            "--output" (str search_name "_untrimmed" ".%(ext)s") (first results)
         :dir download_dir))
     (println "youtube-dl Std-Out")
@@ -117,7 +118,7 @@
     (def file_path (get-song-loc (:out ytd_res)))
     (def new_file_path (str/replace file_path #"_untrimmed" ""))
     (println "Trimming Silence")
-    (def fmpeg_res (sh "ffmpeg" "-i" file_path "-c:a" "alac" "-c:v" "copy" "-af" "silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse,silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse" new_file_path
+    (def fmpeg_res (sh "ffmpeg" "-i" file_path "-c:a" "aac" "-c:v" "copy" "-af" "silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse,silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse" new_file_path
                       :dir download_dir))
     (println "ffmpeg Std-Out")
     (println (:out fmpeg_res))
