@@ -117,8 +117,14 @@
     ;; Trim silence
     (def file_path (get-song-loc (:out ytd_res)))
     (def new_file_path (str/replace file_path #"_untrimmed" ""))
-    (println "Trimming Silence")
-    (def fmpeg_res (sh "ffmpeg" "-i" file_path "-c:a" "aac" "-c:v" "copy" "-af" "silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse,silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse" new_file_path
+    (println "Trimming Silence And Adding Tags")
+
+    (def artist_option (str "artist=" artist))
+    (def title_option (str "title=" title))
+    (def album_artist_option (str "album_artist=" artist))
+
+    (def fmpeg_res (sh "ffmpeg" "-i" file_path "-metadata" artist_option "-metadata" title_option "-metadata" album_artist_option 
+                       "-c:a" "aac" "-c:v" "copy" "-af" "silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse,silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse" new_file_path
                       :dir download_dir))
     (println "ffmpeg Std-Out")
     (println (:out fmpeg_res))
