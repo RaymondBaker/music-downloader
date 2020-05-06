@@ -17,9 +17,9 @@
 
 (def loc_regex
   #"Destination:\s(.*?\.m4a)")
-
+ 
+; Get song location from youtube-dl output
 (defn get-song-loc [output]
-  "Get song location from youtube-dl output"
   (def matcher (re-matcher loc_regex output))
   (when-let [match (re-find matcher)]
     (nth match 1)))
@@ -27,8 +27,8 @@
 (def vid_regex
   #"<h3 class=\"yt-lockup-title \"><a href=\"(.*?)\"")
 
+; Get result links from youtube search
 (defn get-vid-links [html]
-  "Get result links from youtube search"
   ;; TODO: check what vidoe title best matches the song title
   (def matcher (re-matcher vid_regex html))
   (loop [match (re-find matcher)
@@ -42,22 +42,22 @@
   (binding [*out* *err*]
     (println msg)))
 
+; Get song information from .list file line returns hash
 (defn parse-song [line]
-  "Get song information from .list file line
-  returns hash"
   (when (re-matches #"\s*[\w\s]+\s+-\s+.*" line)
       (let [split (str/split line #"\s+-\s+")
             artist (first split)
             title (first (rest split))]
         [(trim artist) (trim title)])))
 
+; convert parse song output into hash
 (defn parse-song->hash-map [parse]
   (let [artist (get parse 0)
         title (get parse 1)]
     (hash-map :artist artist :title title)))
-
+  
+;Read .list file into list of hashs
 (defn read-music [file_path]
-  "Read .list file into list of hashs"
   (with-open [rdr (clojure.java.io/reader file_path)]
     (for [line (doall (line-seq rdr))
           :let [parse (parse-song line)]
