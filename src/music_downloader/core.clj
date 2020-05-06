@@ -18,9 +18,8 @@
 (def loc_regex
   #"Destination:\s(.*?\.m4a)")
 
-(defn get-song-loc
+(defn get-song-loc [output]
   "Get song location from youtube-dl output"
-  [output]
   (def matcher (re-matcher loc_regex output))
   (when-let [match (re-find matcher)]
     (nth match 1)))
@@ -28,10 +27,9 @@
 (def vid_regex
   #"<h3 class=\"yt-lockup-title \"><a href=\"(.*?)\"")
 
-(defn get-vid-links
+(defn get-vid-links [html]
   "Get result links from youtube search"
   ;; TODO: check what vidoe title best matches the song title
-  [html]
   (def matcher (re-matcher vid_regex html))
   (loop [match (re-find matcher)
                   result []]
@@ -59,6 +57,7 @@
     (hash-map :artist artist :title title)))
 
 (defn read-music [file_path]
+  "Read .list file into list of hashs"
   (with-open [rdr (clojure.java.io/reader file_path)]
     (for [line (doall (line-seq rdr))
           :let [parse (parse-song line)]
