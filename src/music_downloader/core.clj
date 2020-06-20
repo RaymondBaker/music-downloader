@@ -17,7 +17,7 @@
 
 (def loc_regex
   #"Destination:\s(.*?\.m4a)")
- 
+
 ; Get song location from youtube-dl output
 (defn get-song-loc [output]
   (def matcher (re-matcher loc_regex output))
@@ -55,7 +55,7 @@
   (let [artist (get parse 0)
         title (get parse 1)]
     (hash-map :artist artist :title title)))
-  
+
 ;Read .list file into list of hashs
 (defn read-music [file_path]
   (with-open [rdr (clojure.java.io/reader file_path)]
@@ -63,6 +63,19 @@
           :let [parse (parse-song line)]
           :when (some? parse)]
       (parse-song->hash-map parse))))
+
+;; Run search-query until a valid result or 10 tries
+(defn search-query [search_string]
+  (loop [x 0]
+    (if (>= x 10)
+      (do
+        (println "Youtube query failed 10 times")
+        [])
+      (let  [query_res (get-vid-links
+                          (:body (client/get search_string)))]
+        (if (empty? query_res)
+          (recur (inc x))
+          query_res)))))
 
 ;; TODO: add option to delete untrimmed file
 ;; option to disable silence trimming
@@ -97,9 +110,7 @@
     ;; get search query for youtube
     (def search_string (str youtube_search_string (clj-util/url-encode search_name)))
     (println search_string)
-    (def results
-      (get-vid-links
-        (:body (client/get search_string))))
+    (def results (search-query search_string))
     (println results)
 
     (println "")
@@ -122,7 +133,7 @@
     (def title_option (str "title=" title))
     (def album_artist_option (str "album_artist=" artist))
 
-    (def fmpeg_res (sh "ffmpeg" "-i" file_path "-metadata" artist_option "-metadata" title_option "-metadata" album_artist_option 
+    (def fmpeg_res (sh "ffmpeg" "-i" file_path "-metadata" artist_option "-metadata" title_option "-metadata" album_artist_option
                        "-c:a" "aac" "-c:v" "copy" "-af" "silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse,silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse" new_file_path
                       :dir download_dir))
     (println "ffmpeg Std-Out")
