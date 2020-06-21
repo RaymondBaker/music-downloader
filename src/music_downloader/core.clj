@@ -4,6 +4,7 @@
   (:require [clojure.pprint :as pp])
   (:require [clj-http.client :as client])
   (:require [clj-http.util :as clj-util])
+  (:require [clojure.java.io :as io])
   (:require [clojure.tools.cli :refer [parse-opts]])
   (:use [clojure.java.shell :only [sh]])
   (:use [clojure.string :only [trim]]))
@@ -44,7 +45,7 @@
 
 ; Get song information from .list file line returns hash
 (defn parse-song [line]
-  (when (re-matches #"\s*[\w\s]+\s+-\s+.*" line)
+  (when (re-matches #"\s*.+\s+-\s+.*" line)
       (let [split (str/split line #"\s+-\s+")
             artist (first split)
             title (first (rest split))]
@@ -86,7 +87,8 @@
     :default "music.list"]
    ["-d" "--download-dir DIR" "Where to download music to"
     :default default_download_loc]
-   ["-s" "--single-song SONG" "Name of a single song you want to download"]])
+   ["-s" "--single-song SONG" "Name of a single song you want to download"]
+   ["-c" "--clobber" "Delete untrimmed song"]])
 
 (defn -main [& args]
   (def cli_opts (parse-opts args cli_options))
@@ -98,6 +100,8 @@
   (def songs (if (some? single_song)
                [(parse-song->hash-map (parse-song single_song))]
                (read-music list_file)))
+  (def clobber (-> cli_opts :options :clobber))
+
   (println "Songs to download")
   (pp/pprint songs)
   (println "")
@@ -106,10 +110,10 @@
   (doseq [song songs]
     (def artist (:artist song))
     (def title (:title song))
-    (def search_name (str artist " - " title " (Official Audio)"))
+    (def search_name (str artist " - " title))
 
     ;; get search query for youtube
-    (def search_string (str youtube_search_string (clj-util/url-encode search_name)))
+    (def search_string (str youtube_search_string (clj-util/url-encode (str search_name " (Official Audio)"))))
     (println search_string)
     (def results (search-query search_string))
     (println results)
@@ -141,5 +145,8 @@
     (println (:out fmpeg_res))
     (println-err "ffmpeg Std-Err:")
     (println-err (:err fmpeg_res))
+    (when clobber
+      (println (str "Deleting file " file_path "\n\tBecause Clobber is set"))
+      (io/delete-file (str download_dir file_path)))
     (println ""))
   (shutdown-agents))
