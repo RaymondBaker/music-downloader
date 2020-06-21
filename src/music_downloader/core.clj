@@ -65,11 +65,12 @@
       (parse-song->hash-map parse))))
 
 ;; Run search-query until a valid result or 10 tries
+;; TODO: clean up this code
 (defn search-query [search_string]
   (loop [x 0]
     (if (>= x 10)
       (do
-        (println "Youtube query failed 10 times")
+        (println-err "Youtube query failed 10 times")
         [])
       (let  [query_res (get-vid-links
                           (:body (client/get search_string)))]
@@ -105,7 +106,7 @@
   (doseq [song songs]
     (def artist (:artist song))
     (def title (:title song))
-    (def search_name (str artist " - " title))
+    (def search_name (str artist " - " title " (Official Audio)"))
 
     ;; get search query for youtube
     (def search_string (str youtube_search_string (clj-util/url-encode search_name)))
