@@ -66,18 +66,18 @@
       (parse-song->hash-map parse))))
 
 ;; Run search-query until a valid result or 10 tries
-;; TODO: clean up this code
 (defn search-query [search_string]
   (loop [x 0]
-    (if (>= x 10)
-      (do
-        (println-err "Youtube query failed 10 times")
-        [])
-      (let  [query_res (get-vid-links
-                          (:body (client/get search_string)))]
-        (if (empty? query_res)
-          (recur (inc x))
-          query_res)))))
+    (let  [query_res (get-vid-links
+                        (:body (client/get search_string)))]
+      (cond
+        (>= x 10) (do
+                  (println-err "Youtube query failed 10 times")
+                  [])
+        (empty? query_res)
+            (recur (inc x))
+        :else
+          query_res))))
 
 ;; TODO: add option to delete untrimmed file
 ;; option to disable silence trimming
