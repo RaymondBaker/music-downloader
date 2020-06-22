@@ -1,13 +1,14 @@
 (ns music-downloader.core
   (:gen-class)
-  (:require [clojure.string :as str])
-  (:require [clojure.pprint :as pp])
   (:require [clj-http.client :as client])
   (:require [clj-http.util :as clj-util])
+  (:require [clojure.string :as str])
+  (:require [clojure.pprint :as pp])
   (:require [clojure.java.io :as io])
   (:require [clojure.tools.cli :refer [parse-opts]])
   (:use [clojure.java.shell :only [sh]])
-  (:use [clojure.string :only [trim]]))
+  (:use [clojure.string :only [trim]])
+  (:use [music-downloader.discogs :only [discogs-query]]))
 
 (def youtube_url "https://www.youtube.com/")
 (def youtube_search_string (str youtube_url "results?search_query="))
@@ -71,11 +72,12 @@
     (let  [query_res (get-vid-links
                         (:body (client/get search_string)))]
       (cond
-        (>= x 10) (do
-                  (println-err "Youtube query failed 10 times")
-                  [])
+        (>= x 10)
+          (do
+            (println-err "Youtube query failed 10 times")
+            [])
         (empty? query_res)
-            (recur (inc x))
+          (recur (inc x))
         :else
           query_res))))
 
@@ -145,6 +147,8 @@
     (println (:out fmpeg_res))
     (println-err "ffmpeg Std-Err:")
     (println-err (:err fmpeg_res))
+
+    ;;This needs to be more thorough
     (when clobber
       (println (str "Deleting file " file_path "\n\tBecause Clobber is set"))
       (io/delete-file (str download_dir file_path)))
