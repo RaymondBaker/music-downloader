@@ -8,7 +8,7 @@
   (:require [clojure.tools.cli :refer [parse-opts]])
   (:use [clojure.java.shell :only [sh]])
   (:use [clojure.string :only [trim]])
-  (:use [music-downloader.discogs :only [discogs-query]]))
+  (:use [music-downloader.lastfm :only [lastfm-query]]))
 
 (def youtube_url "https://www.youtube.com/")
 (def youtube_search_string (str youtube_url "results?search_query="))
@@ -19,6 +19,9 @@
 
 (def loc_regex
   #"Destination:\s(.*?\.m4a)")
+
+
+(println (lastfm-query "Pegboard Nerds" "Razor Sharp"))
 
 ; Get song location from youtube-dl output
 (defn get-song-loc [output]
