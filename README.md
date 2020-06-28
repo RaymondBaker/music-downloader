@@ -23,8 +23,10 @@ Download from http://example.com/FIXME.
     Where to download music to  
 -s --single-song <SONG>  
     Download single song without list file
--c --clobber
+-c --clean-up
     Delete intermediate files
+-o --offline
+    Don't use lastfm for tag info
 ```
 
 ## Examples
