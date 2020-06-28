@@ -1,0 +1,3 @@
+- Optional tags for youtube search
+  - Won't be added to the final title
+- Album downloads
