@@ -3,7 +3,8 @@
 ```
 Downloads music from a given list file.
 this first does a search query for the song on youtube and then uses youtube-dl
-and ffmpeg to download and trim the silence respectively
+and ffmpeg to download and trim the silence respectively.
+It can use lastfm to find metadata
 ```
 
 ## Installation
