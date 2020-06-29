@@ -21,7 +21,7 @@
 (def lastfm_url "http://ws.audioscrobbler.com/2.0/?method=track.getInfo")
 
 ;; TODO: add sleep if request fails due to more than 25 requests per minute
-(defn lastfm-query [title artist ]
+(defn lastfm-query [title artist]
   (def query_str (str lastfm_url
                     "&api_key=" (clj-util/url-encode lastfm_key) "&artist="
                     (clj-util/url-encode artist) "&track="
