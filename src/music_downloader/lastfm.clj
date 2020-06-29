@@ -34,12 +34,13 @@
           fixed_query (str/replace query #"@attr" "attr")]
       (:track (json/read-str fixed_query :key-fn keyword))))
 
+  (println query_res)
   ;; TODO: return nil when query fails
   {:title (-> query_res :name)
    :artist (-> query_res :artist :name)
    :album-artist (-> query_res :album :artist)
    :album (-> query_res :album :title)
    :track-num (-> query_res :album  :attr :position)
-   :genre (capitalize-words (:name (nth (-> query_res :toptags :tag) 0)))})
+   :genre (capitalize-words (:name (first (-> query_res :toptags :tag))))})
 
 
