@@ -6,6 +6,7 @@
   (:require [clojure.pprint :as pp])
   (:require [clojure.java.io :as io])
   (:require [clojure.tools.cli :refer [parse-opts]])
+  (:require [clojure.data.json :as json])
   (:use [clojure.java.shell :only [sh]])
   (:use [clojure.string :only [trim]])
   (:use [music-downloader.lastfm :only [lastfm-query]]))
@@ -29,7 +30,7 @@
     (nth match 1)))
 
 (def vid_regex
-  #"<h3 class=\"yt-lockup-title \"><a href=\"(.*?)\"")
+  #"<a id=\"video-title\" .* href=\"(.*?)\"")
 
 ; Get result links from youtube search
 (defn get-vid-links [html]
@@ -88,20 +89,19 @@
      "-metadata" (str "album_artist=" artist)
      ]))
 
-;; Run search-query until a valid result or 10 tries
-(defn search-query [search_string]
-  (loop [x 0]
-    (let  [query_res (get-vid-links
-                        (:body (client/get search_string)))]
-      (cond
-        (>= x 10)
-          (do
-            (println-err "Youtube query failed 10 times")
-            [])
-        (empty? query_res)
-          (recur (inc x))
-        :else
-          query_res))))
+;; Youtube Api
+;; TODO get this from file
+(def youtube_api_key (slurp "googleApi.key"))
+(def headers {"User-Agent" "Mozilla/5.0 (platform; rv:geckoversion) Gecko/geckotrail Firefox/firefoxversion"})
+(defn youtube-api-url [search_str api_key]
+  (str "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=20&" "q=" search_str
+       "&type=video&key=" api_key))
+(defn search-query [search_str]
+  (def search_url (youtube-api-url search_str youtube_api_key))
+  (println search_url)
+  (def query (:body (client/get search_url {:headers headers})))
+  (def results (json/read-str query :key-fn keyword))
+  (map #(-> % :id :videoId) (-> results :items)))
 
 ;; TODO: add option to delete untrimmed file
 ;; option to disable silence trimming
@@ -140,8 +140,7 @@
     (def search_name (str artist " - " title))
 
     ;; get search query for youtube
-    (def search_string (str youtube_search_string (clj-util/url-encode (str search_name " (Official Audio)"))))
-    (println search_string)
+    (def search_string (clj-util/url-encode (str search_name " (Official Audio)")))
     (def results (search-query search_string))
     (println results)
 
