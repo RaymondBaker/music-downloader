@@ -30,6 +30,7 @@
   (when-let [match (re-find matcher)]
     (nth match 1)))
 
+;;TODO: Remove this
 (def vid_regex
   #"<a id=\"video-title\" .* href=\"(.*?)\"")
 
