@@ -14,6 +14,7 @@
 (def youtube_url "https://www.youtube.com/")
 (def youtube_search_string (str youtube_url "results?search_query="))
 (def default_download_loc "/home/raymond/Downloads/Music/")
+;;TODO: lower start threshold
 (def trim_silence_code "silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse,silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse")
 
 ;; Global Options
