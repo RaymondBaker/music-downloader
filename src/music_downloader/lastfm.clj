@@ -41,6 +41,7 @@
    :album-artist (-> query_res :album :artist)
    :album (-> query_res :album :title)
    :track-num (-> query_res :album  :attr :position)
+   ;; Thread (->) could be used for this whole operation
    :genre (capitalize-words (:name (first (-> query_res :toptags :tag))))})
 
 
