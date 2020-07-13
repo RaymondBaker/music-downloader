@@ -34,6 +34,7 @@
 (def vid_regex
   #"<a id=\"video-title\" .* href=\"(.*?)\"")
 
+; TODO; REMOVE
 ; Get result links from youtube search
 (defn get-vid-links [html]
   ;; TODO: check what vidoe title best matches the song title
@@ -71,6 +72,7 @@
           :when (some? parse)]
       (parse-song->hash-map parse))))
 
+; TODO: If lastfm tags are passed into this this becomes pure
 (defn ffmpeg-tag-options [title artist use_lastfm]
   (if use_lastfm
     ;;With lastfm
