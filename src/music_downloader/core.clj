@@ -174,6 +174,12 @@
     (println-err "ffmpeg Std-Err:")
     (println-err (:err fmpeg_res))
 
+    (def chmod_res (sh "chmod" "755" (str download_dir new_file_path)))
+    (println "chmod Std-Out")
+    (println (:out chmod_res))
+    (println-err "chmod Std-Err:")
+    (println-err (:err chmod_res))
+
     ;;This needs to be more thorough
     (when clean_up
       (println (str "Deleting file " file_path "\n\tBecause clean_up is set"))
