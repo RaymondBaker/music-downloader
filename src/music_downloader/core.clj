@@ -15,7 +15,7 @@
 (def youtube_search_string (str youtube_url "results?search_query="))
 (def default_download_loc "/home/raymond/Downloads/Music/")
 ;;TODO: lower start threshold
-(def trim_silence_code "silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse,silenceremove=start_periods=1:start_duration=1:start_threshold=-60dB:detection=peak,aformat=dblp,areverse")
+(def trim_silence_code "silenceremove=start_periods=1:start_duration=1:start_threshold=-90dB:detection=peak,aformat=dblp,areverse,silenceremove=start_periods=1:start_duration=1:start_threshold=-90dB:detection=peak,aformat=dblp,areverse")
 
 ;; Global Options
 (def Verbose false)
@@ -174,7 +174,9 @@
     (println-err "ffmpeg Std-Err:")
     (println-err (:err fmpeg_res))
 
-    (def chmod_res (sh "chmod" "755" (str download_dir new_file_path)))
+    (def chmod_command ["chmod" "755" (str download_dir new_file_path)])
+    (println chmod_command)
+    (def chmod_res (apply sh chmod_command))
     (println "chmod Std-Out")
     (println (:out chmod_res))
     (println-err "chmod Std-Err:")
