@@ -18,12 +18,30 @@
 
 (def headers {"User-Agent" "Mozilla/5.0 (platform; rv:geckoversion) Gecko/geckotrail Firefox/firefoxversion"})
 (def lastfm_key (slurp "lastfm.key"))
-(def lastfm_url "http://ws.audioscrobbler.com/2.0/?method=track.getInfo")
+(def lastfm_url "http://ws.audioscrobbler.com/2.0/")
+
+(defn get-album-songs [album artist]
+  (def query_str (str lastfm_url
+                    "?method=album.getinfo&api_key=" (clj-util/url-encode lastfm_key) "&artist="
+                    (clj-util/url-encode artist) "&album="
+                    (clj-util/url-encode album) "&format=json"))
+
+  ;; Because @ is a keyword in clojure
+  (def query_res
+    (let [query (:body (client/get query_str {:headers headers}))
+          fixed_query (str/replace query #"@attr" "attr")]
+      (:album (json/read-str fixed_query :key-fn keyword))))
+
+
+  (map #(hash-map
+          :artist artist
+          :title (-> % :name))
+       (-> query_res :tracks :track)))
 
 ;; TODO: add sleep if request fails due to more than 25 requests per minute
-(defn lastfm-query [title artist]
+(defn get-song-info [title artist]
   (def query_str (str lastfm_url
-                    "&api_key=" (clj-util/url-encode lastfm_key) "&artist="
+                    "?method=track.getInfo&api_key=" (clj-util/url-encode lastfm_key) "&artist="
                     (clj-util/url-encode artist) "&track="
                     (clj-util/url-encode title) "&format=json"))
   (println query_str)

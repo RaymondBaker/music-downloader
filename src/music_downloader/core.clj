@@ -9,7 +9,7 @@
   (:require [clojure.data.json :as json])
   (:use [clojure.java.shell :only [sh]])
   (:use [clojure.string :only [trim]])
-  (:use [music-downloader.lastfm :only [lastfm-query]]))
+  (:use [music-downloader.lastfm :only [get-song-info get-album-songs]]))
 
 (def youtube_url "https://www.youtube.com/")
 (def youtube_search_string (str youtube_url "results?search_query="))
@@ -30,54 +30,45 @@
   (when-let [match (re-find matcher)]
     (nth match 1)))
 
-;;TODO: Remove this
-(def vid_regex
-  #"<a id=\"video-title\" .* href=\"(.*?)\"")
-
-; TODO; REMOVE
-; Get result links from youtube search
-(defn get-vid-links [html]
-  ;; TODO: check what vidoe title best matches the song title
-  (def matcher (re-matcher vid_regex html))
-  (loop [match (re-find matcher)
-                  result []]
-    (if-not match
-      result
-      (recur (re-find matcher)
-             (conj result (str youtube_url (nth match 1)))))))
 
 (defn println-err [msg]
   (binding [*out* *err*]
     (println msg)))
 
 ; Get song information from .list file line returns hash
-(defn parse-song [line]
-  (when (re-matches #"\s*.+\s+-\s+.*" line)
+; if [Album] at start of line use lastfm to get all songs in album
+(defn parse-line [line]
+  (cond
+    (re-matches #"\[Album\]\s*.+\s+-\s+.*" line)
+      (let [split (str/split (str/replace line #"\[Album\]\s*" "") #"\s+-\s+")
+            artist (first split)
+            album (second split)]
+        (get-album-songs album artist))
+    (re-matches #"\s*.+\s+-\s+.*" line)
       (let [split (str/split line #"\s+-\s+")
             artist (first split)
             title (first (rest split))]
-        [(trim artist) (trim title)])))
-
-; convert parse song output into hash
-(defn parse-song->hash-map [parse]
-  (let [artist (get parse 0)
-        title (get parse 1)]
-    (hash-map :artist artist :title title)))
+        (list (hash-map :artist (trim artist)
+                    :title (trim title))))))
 
 ;Read .list file into list of hashs
+; TODO: Clean this up with apply concat
 (defn read-music [file_path]
   (with-open [rdr (clojure.java.io/reader file_path)]
-    (for [line (doall (line-seq rdr))
-          :let [parse (parse-song line)]
-          :when (some? parse)]
-      (parse-song->hash-map parse))))
+    (loop [lines (line-seq rdr)
+           out []]
+     (let [parse (parse-line (first lines))]
+       (if (some? (second lines))
+         (recur (rest lines)
+                (concat out parse))
+         (concat out parse))))))
 
 ; TODO: If lastfm tags are passed into this this becomes pure
 (defn ffmpeg-tag-options [title artist use_lastfm]
   (if use_lastfm
     ;;With lastfm
     (do
-      (def query_res (lastfm-query title artist))
+      (def query_res (get-song-info title artist))
       ;;If query fails fall back on offline way
       (when (nil? query_res) (ffmpeg-tag-options title artist false))
       ["-metadata" (str "artist=" (:artist query_res))
@@ -115,7 +106,7 @@
     :default "music.list"]
    ["-d" "--download-dir DIR" "Where to download music to"
     :default default_download_loc]
-   ["-s" "--single-song SONG" "Name of a single song you want to download"]
+   ["-s" "--single-line Line" "Single line from in music.list format for download"]
    ["-c" "--clean-up" "Delete untrimmed song"]
    ["-o" "--offline" "Don't use lastfm for song info"]])
 
@@ -124,10 +115,10 @@
 
   (def list_file (-> cli_opts :options :list-file))
   (def download_dir (-> cli_opts :options :download-dir))
-  (def single_song (-> cli_opts :options :single-song))
+  (def single_line (-> cli_opts :options :single-line))
 
-  (def songs (if (some? single_song)
-               [(parse-song->hash-map (parse-song single_song))]
+  (def songs (if (some? single_line)
+               (parse-line single_line)
                (read-music list_file)))
   (def clean_up (-> cli_opts :options :clean-up))
 
