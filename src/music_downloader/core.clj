@@ -43,7 +43,7 @@
       (let [split (str/split (str/replace line #"\[Album\]\s*" "") #"\s+-\s+")
             artist (first split)
             album (second split)]
-        (get-album-songs album artist))
+        (get-album-songs (trim album) (trim artist)))
     (re-matches #"\s*.+\s+-\s+.*" line)
       (let [split (str/split line #"\s+-\s+")
             artist (first split)
