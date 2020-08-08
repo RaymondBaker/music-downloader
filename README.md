@@ -37,6 +37,7 @@ Download from http://example.com/FIXME.
 ```
 <Artist Name> - <Song Name>
 The Beatles - While My Guitar Gently Weeps
+[Album] <Artist Name> - <Album Name>
 ```
 
 ### Bugs
