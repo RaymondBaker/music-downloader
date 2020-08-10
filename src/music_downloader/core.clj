@@ -141,6 +141,7 @@
 
     (println "")
     (println "Downloading Song")
+    ;; TODO: go through all of results until a download completes
     (def ytd_res (sh "youtube-dl" "-x" "--embed-thumbnail" "--audio-format" "m4a" "--no-playlist"
                            "--output" (str search_name "_untrimmed" ".%(ext)s") (first results)
         :dir download_dir))
