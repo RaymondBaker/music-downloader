@@ -12,6 +12,7 @@
   (:use [music-downloader.lastfm :only [get-song-info get-album-songs]]))
 
 (def youtube_url "https://www.youtube.com/")
+(def youtube_watch_url (str youtube_url "watch?v="))
 (def youtube_search_string (str youtube_url "results?search_query="))
 (def default_download_loc "/home/raymond/Downloads/Music/")
 ;;TODO: lower start threshold
@@ -117,9 +118,25 @@
   (def download_dir (-> cli_opts :options :download-dir))
   (def single_line (-> cli_opts :options :single-line))
 
-  (def songs (if (some? single_line)
-               (parse-line single_line)
-               (read-music list_file)))
+  (defn make-downloaded? [music_dir]
+    (let [cur_files (str/split-lines (:out (sh "find" music_dir)))
+          cur_songs (map #(-> %
+                          (str/split #"/")
+                          last
+                          (str/split #"\.")
+                          first
+                          str/upper-case)
+                      cur_files)]
+      (fn [song]
+        (let [file_name (str/upper-case (str (:artist song) " - " (:title song)))]
+          (not (some #(= file_name %) cur_songs))))))
+
+  ;; TODO: paramaterize this music_lib_loc
+  (def songs (filter (make-downloaded? "/home/raymond/Share/Music/")
+                     (if (some? single_line)
+                       (parse-line single_line)
+                       (read-music list_file))))
+
   (def clean_up (-> cli_opts :options :clean-up))
 
   (def offline (-> cli_opts :options :offline))
@@ -136,8 +153,9 @@
 
     ;; get search query for youtube
     (def search_string (clj-util/url-encode (str search_name " (Official Audio)")))
-    (def results (search-query search_string))
+    (def results (map #(str youtube_watch_url %) (search-query search_string)))
     (println results)
+
 
     (println "")
     (println "Downloading Song")
