@@ -135,7 +135,7 @@
           (not (some #(= file_name %) cur_songs))))))
 
   ;; TODO: paramaterize this music_lib_loc
-  (def songs (filter (make-downloaded? "/home/raymond/Downloads/Music/")
+  (def songs (filter (make-downloaded? default_music_lib_loc)
                      (if (some? single_line)
                        (parse-line single_line)
                        (read-music list_file))))
