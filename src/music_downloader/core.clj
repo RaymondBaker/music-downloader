@@ -15,6 +15,7 @@
 (def youtube_watch_url (str youtube_url "watch?v="))
 (def youtube_search_string (str youtube_url "results?search_query="))
 (def default_download_loc "/home/raymond/Downloads/Music/")
+(def default_music_lib_loc "/home/raymond/Share/Music/")
 ;;TODO: lower start threshold
 (def trim_silence_code "silenceremove=start_periods=1:start_duration=1:start_threshold=-90dB:detection=peak,aformat=dblp,areverse,silenceremove=start_periods=1:start_duration=1:start_threshold=-90dB:detection=peak,aformat=dblp,areverse")
 
@@ -124,15 +125,17 @@
                           (str/split #"/")
                           last
                           (str/split #"\.")
-                          first
+                          butlast
+                          (as-> string_list (str/join "." string_list))
                           str/upper-case)
                       cur_files)]
+      (pp/pprint cur_songs)
       (fn [song]
         (let [file_name (str/upper-case (str (:artist song) " - " (:title song)))]
           (not (some #(= file_name %) cur_songs))))))
 
   ;; TODO: paramaterize this music_lib_loc
-  (def songs (filter (make-downloaded? "/home/raymond/Share/Music/")
+  (def songs (filter (make-downloaded? "/home/raymond/Downloads/Music/")
                      (if (some? single_line)
                        (parse-line single_line)
                        (read-music list_file))))
