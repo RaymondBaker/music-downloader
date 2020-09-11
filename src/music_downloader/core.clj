@@ -49,7 +49,7 @@
     (re-matches #"\s*.+\s+-\s+.*" line)
       (let [split (str/split line #"\s+-\s+")
             artist (first split)
-            ; Change this to do str/join instead of first so songs can have - in their name
+            ; TODO: Change this to do str/join instead of first so songs can have - in their name
             title (first (rest split))]
         (list (hash-map :artist (trim artist)
                     :title (trim title))))))
