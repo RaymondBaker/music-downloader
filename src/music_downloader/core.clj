@@ -119,7 +119,7 @@
   (def download_dir (-> cli_opts :options :download-dir))
   (def single_line (-> cli_opts :options :single-line))
 
-  (defn make-downloaded? [music_dir]
+  (defn downloaded? [music_dir]
     (let [cur_files (str/split-lines (:out (sh "find" music_dir)))
           cur_songs (map #(-> %
                           (str/split #"/")
@@ -129,13 +129,13 @@
                           (as-> string_list (str/join "." string_list))
                           str/upper-case)
                       cur_files)]
-      (pp/pprint cur_songs)
       (fn [song]
         (let [file_name (str/upper-case (str (:artist song) " - " (:title song)))]
           (not (some #(= file_name %) cur_songs))))))
 
   ;; TODO: paramaterize this music_lib_loc
-  (def songs (filter (make-downloaded? default_music_lib_loc)
+  ; TODO: BUG even though all dark side of the moon songs were filtered they were still downloaded
+  (def songs (filter (downloaded? default_music_lib_loc)
                      (if (some? single_line)
                        (parse-line single_line)
                        (read-music list_file))))
@@ -163,17 +163,26 @@
     (println "")
     (println "Downloading Song")
     ;; TODO: go through all of results until a download completes
-    (def ytd_res (sh "youtube-dl" "-x" "--embed-thumbnail" "--audio-format" "m4a" "--no-playlist"
-                           "--output" (str search_name "_untrimmed" ".%(ext)s") (first results)
-        :dir download_dir))
-    (println "youtube-dl Std-Out")
-    (println (:out ytd_res))
-    (println-err "youtube-dl Std-Err:")
-    (println-err (:err ytd_res))
-    (println "")
 
-    ;; Trim silence
-    (def file_path (get-song-loc (:out ytd_res)))
+
+    (defn youtube-dl-cmd []
+      (println "Calling youtube-dl")
+      (sh "youtube-dl" "-x" "--embed-thumbnail" "--audio-format" "m4a" "--no-playlist"
+                        "--output" (str search_name "_untrimmed" ".%(ext)s") (first results)
+                        :dir download_dir))
+
+    (def file_path (loop [ytd_res (youtube-dl-cmd)]
+       (println "youtube-dl Std-Out")
+       (println (:out ytd_res))
+       (println-err "youtube-dl Std-Err:")
+       (println-err (:err ytd_res))
+       (println "")
+
+       ;; Trim silence
+       (if-let [song_loc (get-song-loc (:out ytd_res))]
+         song_loc
+         (recur (youtube-dl-cmd)))))
+
     (def new_file_path (str/replace file_path #"_untrimmed" ""))
     (println "Trimming Silence And Adding Tags")
 
